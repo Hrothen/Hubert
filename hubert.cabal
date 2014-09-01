@@ -18,7 +18,7 @@ cabal-version:       >=1.10
 executable hubert
   main-is:             tests.hs
   other-modules:       Dom,
-                       Html_noParsec       
+                       HTML       
   -- other-extensions:    
   build-depends:       base >=4.7 && <5,
                        unordered-containers >=0.2 && <0.3,

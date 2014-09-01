@@ -1,4 +1,4 @@
-module Html_noParsec where
+module HTML where
 
 import Data.List (isPrefixOf)
 import Data.Word (Word(..))
@@ -71,10 +71,10 @@ parseText = liftM Dom.text $ consumeWhile (/='<')
 
 parseElement :: ParserS Node
 parseElement = do
-    consumeChar >>= assert "missing < in open tag" (=='<')
+    consumeChar >>= assert "missing < in open tag" . (=='<')
     tag <- parseTagName
     attrs <- parseAttributes
-    consumeChar >>= assert "missing > in open tag" (=='>')
+    consumeChar >>= assert "missing > in open tag" . (=='>')
     -- contents
     children <- parseNodes
     --end tag
