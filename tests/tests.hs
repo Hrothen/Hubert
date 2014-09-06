@@ -2,7 +2,7 @@ module Main where
 
 import Control.Monad (sequence_)
 
-import HTML
+import HTML.Parser
 import Dom
 
 test1 :: IO ()
