@@ -1,6 +1,8 @@
-module HTML where
+module HTML.Parser 
+    ( parseHtml
+    ) where
 
-import Data.List (isPrefixOf)
+import Data.List (isPrefixOf,span)
 import Data.Word (Word(..))
 import Data.Char (isAlphaNum)
 import Control.Monad (liftM)
@@ -13,27 +15,27 @@ import qualified Data.HashMap.Strict as HM
 
 import Dom
 
-data Parser = Parser Word String
+data Parser = Parser String
 
 type ParserS = ExceptT String (StateT Parser Identity)
 
--- runParserS :: ParserS a -> Parser -> a
+
 runParserS p s = evalState (runExceptT p) s
 
 nextchr :: Parser -> Char
-nextchr (Parser pos input) = input!!(fromIntegral pos)
+nextchr (Parser s) = head s -- errors if called when string is empty
 
 startsWith :: Parser -> String -> Bool
-startsWith (Parser pos input) s = s `isPrefixOf` drop (fromIntegral pos) input
+startsWith (Parser input) s = s `isPrefixOf` input
 
 eof :: Parser -> Bool
-eof (Parser pos input) = (fromIntegral pos) >= length input
+eof (Parser input) = null input
 
-increment :: Word -> ParserS ()
-increment i = modify (\(Parser p inp)-> Parser (p+i) inp)
+increment :: Int -> ParserS ()
+-- increment i = modify (\(Parser p inp)-> Parser (p+i) inp)
+increment i = modify (\(Parser inp) -> Parser (drop i inp))
 
 consumeChar :: ParserS Char
--- consumeChar p@(Parser pos input) = (Parser (pos+1) input,nextchr p)
 consumeChar = do
     psr <- get
     let p = nextchr psr
@@ -42,10 +44,9 @@ consumeChar = do
 
 consumeWhile :: (Char -> Bool) -> ParserS String
 consumeWhile f = do
-    Parser pos input <- get
-    let s = takeWhile f $ drop (fromIntegral pos) input
-        len = fromIntegral $ length s
-    increment len
+    Parser input <- get
+    let (s,input') = span f input
+    put $ Parser input'
     return s
 
 consumeWhitespace :: ParserS String
@@ -55,7 +56,7 @@ parseTagName :: ParserS String
 parseTagName = consumeWhile isAlphaNum
 
 
--- use this to mimic rominson's (improper, soon to be depriciated)
+-- use this to mimic robinson's (improper, soon to be depriciated)
 -- use of assert
 assert :: String -> Bool -> ParserS ()
 assert s b = if b then return () else throwError s
@@ -125,7 +126,7 @@ parseNodes = parseNodes' []
 
 
 parseHtml :: String -> Either String Node
-parseHtml s = case runParserS parseNodes (Parser 0 s) of
+parseHtml s = case runParserS parseNodes (Parser s) of
               Left err -> Left err
               Right nodes -> Right $
                 if length nodes == 1
