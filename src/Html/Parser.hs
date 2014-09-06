@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 module HTML.Parser 
     ( parseHtml
     ) where
@@ -12,53 +13,55 @@ import Control.Monad.Except (ExceptT(..), Except, runExceptT, throwError)
 import Control.Monad.Identity
 
 import qualified Data.HashMap.Strict as HM
+import qualified Data.Text as T
 
 import Dom
 
-data Parser = Parser String
+data Parser = Parser T.Text
 
-type ParserS = ExceptT String (StateT Parser Identity)
+type ParserS = ExceptT T.Text (StateT Parser Identity)
 
 
 runParserS p s = evalState (runExceptT p) s
 
 nextchr :: Parser -> Char
-nextchr (Parser s) = head s -- errors if called when string is empty
+nextchr (Parser s) = T.head s -- errors if called when string is empty
 
-startsWith :: Parser -> String -> Bool
-startsWith (Parser input) s = s `isPrefixOf` input
+startsWith :: Parser -> T.Text -> Bool
+startsWith (Parser input) s = s `T.isPrefixOf` input
 
 eof :: Parser -> Bool
-eof (Parser input) = null input
+eof (Parser input) = T.null input
 
-increment :: Int -> ParserS ()
--- increment i = modify (\(Parser p inp)-> Parser (p+i) inp)
-increment i = modify (\(Parser inp) -> Parser (drop i inp))
+-- increment :: Int -> ParserS ()
+-- increment i = modify (\(Parser inp) -> Parser (drop i inp))
 
 consumeChar :: ParserS Char
 consumeChar = do
-    psr <- get
-    let p = nextchr psr
-    increment 1
-    return p
+    (Parser inp) <- get
+    case T.uncons inp of
+      Nothing -> throwError "ERROR: unexpectedly reached end of file"
+      Just (c,inp') -> do
+        put (Parser inp')
+        return c
 
-consumeWhile :: (Char -> Bool) -> ParserS String
+consumeWhile :: (Char -> Bool) -> ParserS T.Text
 consumeWhile f = do
     Parser input <- get
-    let (s,input') = span f input
+    let (s,input') = T.span f input
     put $ Parser input'
     return s
 
-consumeWhitespace :: ParserS String
+consumeWhitespace :: ParserS T.Text
 consumeWhitespace = consumeWhile (==' ')
 
-parseTagName :: ParserS String
+parseTagName :: ParserS T.Text
 parseTagName = consumeWhile isAlphaNum
 
 
 -- use this to mimic robinson's (improper, soon to be depriciated)
 -- use of assert
-assert :: String -> Bool -> ParserS ()
+assert :: T.Text -> Bool -> ParserS ()
 assert s b = if b then return () else throwError s
 
 
@@ -87,14 +90,14 @@ parseElement = do
     return $ Dom.elem tag attrs children
 
 
-parseAttr :: ParserS (String, String)
+parseAttr :: ParserS (T.Text, T.Text)
 parseAttr = do
     name <- parseTagName
     consumeChar >>= assert "missing =" . (=='=')
     value <- parseAttrValue
     return (name,value)
 
-parseAttrValue :: ParserS String
+parseAttrValue :: ParserS T.Text
 parseAttrValue = do
     open <- consumeChar
     assert "invalid open" (open == '"' || open == '\'')
@@ -125,7 +128,7 @@ parseNodes = parseNodes' []
         else parseNode >>= parseNodes' . (nodes++) . (:[])  --slow for big DOM
 
 
-parseHtml :: String -> Either String Node
+parseHtml :: T.Text -> Either T.Text Node
 parseHtml s = case runParserS parseNodes (Parser s) of
               Left err -> Left err
               Right nodes -> Right $

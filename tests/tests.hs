@@ -1,12 +1,16 @@
+{-# LANGUAGE OverloadedStrings #-}
 module Main where
 
 import Control.Monad (sequence_)
+
+import qualified Data.Text as T
+import qualified Data.Text.Encoding as E
 
 import HTML.Parser
 import Dom
 
 test1 :: IO ()
-test1 = readFile "test.html" >>= return . parseHtml >>= print
+test1 = readFile "test.html" >>= return . parseHtml . T.pack >>= print
 
 tests = [test1]
 

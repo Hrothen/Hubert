@@ -1,6 +1,7 @@
 module Dom where
 
 import qualified Data.HashMap.Strict as HM
+import qualified Data.Text as T
 
 
 data NTree a = NTree a [NTree a]
@@ -8,21 +9,21 @@ data NTree a = NTree a [NTree a]
 
 
 -- data specific to each node type
-data NodeType = Text String 
+data NodeType = Text T.Text 
               | Element ElementData
   deriving (Show)
 
 type Node = NTree NodeType
 
 
-type AttrMap = HM.HashMap String String
+type AttrMap = HM.HashMap T.Text T.Text
 
-data ElementData = ElementData String AttrMap
+data ElementData = ElementData T.Text AttrMap
   deriving (Show)
 
 
-text :: String -> Node
+text :: T.Text -> Node
 text = flip NTree [] . Text
 
-elem :: String -> AttrMap -> [Node] -> Node
+elem :: T.Text -> AttrMap -> [Node] -> Node
 elem name atts cs = NTree (Element (ElementData name atts)) cs
