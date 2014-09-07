@@ -67,3 +67,6 @@ attribute = do
 
 -- run parser p and then strip the trailing spaces, returning the result of p.
 spacesAfter p = p <* spaces
+
+
+-------------------------------- TESTS ---------------------------------------

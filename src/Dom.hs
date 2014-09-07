@@ -1,9 +1,12 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings, FlexibleInstances #-}
 module Dom where
 
 import qualified Data.HashMap.Strict as HM
 import qualified Data.Text as T
 
+import Test.QuickCheck
+import Test.QuickCheck.Instances
+import Control.Monad (liftM, liftM3)
 
 data NTree a = NTree a [NTree a]
   deriving (Show)
@@ -43,14 +46,16 @@ toHtml (NTree (Element (ElementData t m)) cs) =
     children = T.concat $ map toHtml cs
     tag' = '<' `T.cons` t `T.snoc` '>'
 
-Instance Arbitrary (NTree NodeType) where
+instance Arbitrary (NTree NodeType) where
     arbitrary = sized tree'
       where
         tree' 0 =
             oneof [liftM text arbitrary,
-                   liftM3 elem arbitrary arbitrary []
+                   liftM3 Dom.elem arbitrary arbitrary (vector 0)]
         tree' n | n > 0 =
             oneof [liftM text arbitrary,
-                   liftM3 elem arbitrary arbitrary subtree]
-        subtree = tree' (n-1) -- n decides depth of tree
-    coarbitrary = 
+                   liftM3 Dom.elem arbitrary arbitrary subtree]
+          where subtree = listOf (tree' (n-1)) -- n decides depth of tree
+    -- coarbitrary (NTree (Text t) _) = variant 0 . coarbitrary t
+    -- coarbitrary (NTree (Element (ElementData t m)) cs) =
+    --     variant 1 . coarbitrary t . coarbitrary m

@@ -24,7 +24,9 @@ executable hubert
   build-depends:       base >=4.7 && <5,
                        unordered-containers >=0.2 && <0.3,
                        mtl >= 2.2.1,
-                       text >= 1.1.0.0
+                       text >= 1.1.0.0,
+                       QuickCheck >= 2.6,
+                       quickcheck-instances >= 0.3.8
   hs-source-dirs:      src,
                        tests
   default-language:    Haskell2010
