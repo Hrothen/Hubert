@@ -98,7 +98,7 @@ parseAttr = do
 parseAttrValue :: ParserS T.Text
 parseAttrValue = do
     open <- consumeChar
-    assert "invalid open" (open == '"' || open == '\'')
+    assert "invalid open" (open == '\"' || open == '\'')
     val <- consumeWhile (/=open)
     consumeChar >>= assert "invalid close" . (==open)
     return val

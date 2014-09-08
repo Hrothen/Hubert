@@ -4,6 +4,7 @@ module HTML.Parsec
     ) where
 
 import Control.Monad (liftM)
+import Control.Applicative ((<*))
 
 import qualified Data.Text as T
 import Text.Parsec
@@ -27,7 +28,7 @@ parseNodes = manyTill parseNode eof
 
 parseNode = parseElement <|> parseText
 
-parseText = liftM Dom.text $ many (noneOf "<")
+parseText = liftM (Dom.text . T.pack) $ many (noneOf "<")
 
 parseElement = do
     -- opening tag
@@ -36,7 +37,7 @@ parseElement = do
     children <- parseChildren
     -- closing tag
     string $ tag ++ ">" -- "</" is consumed by parseChildren, maybe bad form?
-    return $ Dom.elem tag attrs children
+    return $ Dom.elem (T.pack tag) attrs children
 
 
 parseChildren = spaces >> manyTill parseChild end
@@ -59,9 +60,9 @@ attributes = liftM HM.fromList $ spaces >> many (spacesAfter attribute)
 attribute = do
     name <- tagName
     char '='
-    open <- char '"' <|> char '\''
-    value <- many (noneOf [open])
-    return (name, value)
+    open <- char '\"' <|> char '\''
+    value <- manyTill anyChar (try $ char open)
+    return (T.pack name, T.pack value)
 
 
 -- run parser p and then strip the trailing spaces, returning the result of p.

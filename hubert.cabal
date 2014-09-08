@@ -18,12 +18,14 @@ cabal-version:       >=1.10
 executable hubert
   main-is:             tests.hs
   other-modules:       Dom,
-                       HTML.Parser       
+                       HTML.Parser
+                       HTML.Parsec       
   -- other-extensions:    
   build-depends:       base >=4.7 && <5,
                        unordered-containers >=0.2 && <0.3,
                        mtl >= 2.2.1,
-                       text >= 1.1.0.0
+                       text >= 1.1.0.0,
+                       parsec >= 3.5.0
   hs-source-dirs:      src,
                        tests
   default-language:    Haskell2010
