@@ -17,11 +17,10 @@ parseHtml :: T.Text -> Either ParseError Node
 parseHtml s = case parse parseNodes "" s of
               Left err -> Left err
               Right nodes -> Right $
-                -- FIXME: this is consistant with Robinson's setup, but will skip adding the html element
-                -- if the DOM happens to be a single tree
                 if length nodes == 1
                 then head nodes
                 else Dom.elem "html" HM.empty nodes
+
 
 parseNodes = manyTill parseNode eof
 

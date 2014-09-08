@@ -3,13 +3,11 @@ module HTML.Parser
     ( parseHtml
     ) where
 
-import Data.List (isPrefixOf,span)
-import Data.Word (Word(..))
 import Data.Char (isAlphaNum)
 import Control.Monad (liftM)
 
-import Control.Monad.State.Lazy (StateT(..), State, modify, evalState, get, put)
-import Control.Monad.Except (ExceptT(..), Except, runExceptT, throwError)
+import Control.Monad.State.Lazy (StateT(..), evalState, get, put)
+import Control.Monad.Except (ExceptT(..), runExceptT, throwError)
 import Control.Monad.Identity
 
 import qualified Data.HashMap.Strict as HM
@@ -33,8 +31,6 @@ startsWith (Parser input) s = s `T.isPrefixOf` input
 eof :: Parser -> Bool
 eof (Parser input) = T.null input
 
--- increment :: Int -> ParserS ()
--- increment i = modify (\(Parser inp) -> Parser (drop i inp))
 
 consumeChar :: ParserS Char
 consumeChar = do
@@ -55,14 +51,15 @@ consumeWhile f = do
 consumeWhitespace :: ParserS T.Text
 consumeWhitespace = consumeWhile (==' ')
 
-parseTagName :: ParserS T.Text
-parseTagName = consumeWhile isAlphaNum
-
 
 -- use this to mimic robinson's (improper, soon to be depriciated)
 -- use of assert
 assert :: T.Text -> Bool -> ParserS ()
 assert s b = if b then return () else throwError s
+
+
+parseTagName :: ParserS T.Text
+parseTagName = consumeWhile isAlphaNum
 
 
 parseNode :: ParserS Node
@@ -75,6 +72,7 @@ parseText = liftM Dom.text $ consumeWhile (/='<')
 
 parseElement :: ParserS Node
 parseElement = do
+    -- open tag
     consumeChar >>= assert "missing < in open tag" . (=='<')
     tag <- parseTagName
     attrs <- parseAttributes
