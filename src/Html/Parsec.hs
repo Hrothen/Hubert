@@ -1,6 +1,8 @@
 {-# LANGUAGE OverloadedStrings, NoMonomorphismRestriction #-}
 module HTML.Parsec
-    ( parseHtml
+    ( parseHtml,
+      parseText,
+      parseElement
     ) where
 
 import Control.Monad (liftM)
@@ -67,6 +69,3 @@ attribute = do
 
 -- run parser p and then strip the trailing spaces, returning the result of p.
 spacesAfter p = p <* spaces
-
-
--------------------------------- TESTS ---------------------------------------

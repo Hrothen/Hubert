@@ -1,6 +1,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 module HTML.Parser 
-    ( parseHtml
+    ( Parser(..),
+      parseHtml,
+      parseText,
+      parseElement,
+      runParserS
     ) where
 
 import Data.Char (isAlphaNum)
