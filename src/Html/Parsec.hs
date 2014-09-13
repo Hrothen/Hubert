@@ -25,7 +25,9 @@ parseHtml s = case parse parseNodes "" s of
                 else Dom.elem "html" HM.empty nodes
 
 
-parseNodes = manyTill parseNode eof
+parseNodes = spaces >> manyTill (spacesAfter parseNode) end
+  where
+    end = eof <|> (try (string "</") >> return ())
 
 
 parseNode = parseElement <|> parseText
@@ -36,17 +38,17 @@ parseElement = do
     -- opening tag
     (tag, attrs) <- between (char '<') (char '>') tagData
     -- contents
-    children <- parseChildren
+    children <- parseNodes
     -- closing tag
-    string $ tag ++ ">" -- "</" is consumed by parseChildren, maybe bad form?
+    string $ tag ++ ">" -- "</" is consumed by parseNodes, maybe bad form?
     return $ Dom.elem (T.pack tag) attrs children
 
 
-parseChildren = spaces >> manyTill parseChild end
-  where
-    end = eof <|> (try (string "</") >> return ())
-
-    parseChild = spacesAfter parseNode
+-- parseChildren = spaces >> manyTill parseChild end
+--   where
+--     end = eof <|> (try (string "</") >> return ())
+-- 
+--     parseChild = spacesAfter parseNode
 
 
 tagData = do
