@@ -7,7 +7,7 @@ module HTML.Parser
       runParserS
     ) where
 
-import Data.Char (isAlphaNum)
+import Data.Char (isAlphaNum, isSpace)
 import Control.Monad (liftM)
 
 import Control.Monad.State.Lazy (StateT(..), evalState, get, put)
@@ -53,7 +53,7 @@ consumeWhile f = do
     return s
 
 consumeWhitespace :: ParserS T.Text
-consumeWhitespace = consumeWhile (==' ')
+consumeWhitespace = consumeWhile isSpace
 
 
 -- use this to mimic robinson's (improper, soon to be depriciated)

@@ -4,15 +4,13 @@ module Main where
 import Prelude hiding (elem)
 import Data.Either (either)
 
--- import qualified Distribution.TestSuite as TS
 import Test.HUnit
+
 import Text.Parsec hiding (parseTest)
 import Text.Parsec.Text
 
--- import Distribution.TestSuite (testGroup)
 
 import qualified Data.Text as T
--- import qualified Data.Text.Encoding as E
 import qualified Data.HashMap.Strict as HM
 
 import qualified HTML.Parser as PR
@@ -87,5 +85,5 @@ dom = elem "html" HM.empty [head,p1,p2]
     title = elem "title" HM.empty [text "Test"]
     p1    = elem "p"    (HM.singleton "class" "inner") [hello, span]
     hello = text "Hello, "
-    span  = elem "span" (HM.singleton "id" "name") [text "world"]
-    p2    = elem "p"    (HM.singleton "class" "inner") [text "Goodbye!"]
+    span  = elem "span" (HM.singleton "id" "name") [text "world!"]
+    p2    = elem "p"    (HM.singleton "class" "inner") [text "Goodbye!\n    "]
