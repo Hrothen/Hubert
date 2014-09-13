@@ -2,10 +2,11 @@
 module Main where
 
 import Prelude hiding (elem)
+import Data.Either (either)
 
 -- import qualified Distribution.TestSuite as TS
 import Test.HUnit
-import Text.Parsec
+import Text.Parsec hiding (parseTest)
 import Text.Parsec.Text
 
 -- import Distribution.TestSuite (testGroup)
@@ -33,39 +34,38 @@ tests = TestList [TestLabel "ParserS html" htmlPR,
 
 parsePR p i = PR.runParserS p (PR.Parser i)
 
-htmlPR = TestCase (assertEqual "for valid html" (Right dom) $
-                                                 PR.parseHtml html)
+htmlPR = parseTest "for valid html" dom $ PR.parseHtml html
 
 
-textPR = TestCase (assertEqual "for valid text" testText $
-                   parsePR PR.parseText "candygram")
+textPR = parseTest "for valid text" testText $ parsePR PR.parseText "candygram"
 
 
-elemPR = TestCase (assertEqual "for valid elem" testElem $
-                   parsePR PR.parseElement "<p ham=\"doctor\">sup</p>")
+elemPR = parseTest "for valid elem" testElem $
+                   parsePR PR.parseElement "<p ham=\"doctor\">sup</p>"
 
 
 ---------------------------- PARSEC TESTS ------------------------------
 
-instance Eq ParseError
+
+htmlPS = parseTest "for valid html" dom $ PS.parseHtml html
 
 
-htmlPS = TestCase (assertEqual "for valid html" (Right dom) $
-                                                 PS.parseHtml html)
+textPS = parseTest "for valid text" testText $
+                    parse PS.parseText "" $ T.pack "candygram"
 
 
-textPS = TestCase (assertEqual "for valid text" testText $
-                   parse PS.parseText "" $ T.pack "candygram")
-
-
-elemPS = TestCase (assertEqual "for valid elem" testElem $
-                   parse PS.parseElement "" $ T.pack "<p ham=\"doctor\">sup</p>")
+elemPS = parseTest "for valid elem" testElem $
+                    parse PS.parseElement "" $ T.pack "<p ham=\"doctor\">sup</p>"
 
 
 ----------------------------- SHARED --------------------------------
 
-testText = Right $ text "candygram"
-testElem = Right $ elem "p" (HM.singleton "ham" "doctor") [text "sup"]
+-- generic test: given an expected value and an actual value, check that the actual
+-- value is not an error message, then compare it to the expected value
+parseTest msg e = TestCase . either (assertFailure . show) (assertEqual msg e)
+
+testText = text "candygram"
+testElem = elem "p" (HM.singleton "ham" "doctor") [text "sup"]
 
 -- a small test html page
 html = "<html>\n\
