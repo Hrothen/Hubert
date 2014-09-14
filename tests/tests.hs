@@ -16,6 +16,7 @@ import qualified Data.HashMap.Strict as HM
 import qualified HTML.Parser as PR
 import qualified HTML.Parsec as PS
 import Dom
+import CSS
 
 
 main = runTestTT tests
@@ -25,7 +26,8 @@ tests = TestList [TestLabel "ParserS html" htmlPR,
                   TestLabel "ParserS elem" elemPR,
                   TestLabel "Parsec html"  htmlPS,
                   TestLabel "Parsec text"  textPS,
-                  TestLabel "Parsec elem"  elemPS]
+                  TestLabel "Parsec elem"  elemPS,
+                  TestLabel "CSS sheet"    testCss]
 
 
 --------------------------- PARSER_S TESTS ------------------------------
@@ -55,6 +57,10 @@ textPS = parseTest "for valid text" testText $
 elemPS = parseTest "for valid elem" testElem $
                     parse PS.parseElement "" $ T.pack "<p ham=\"doctor\">sup</p>"
 
+
+------------------------------ CSS TESTS ----------------------------
+
+testCss = parseTest "for valid css" sheet $ parseCSS css
 
 ----------------------------- SHARED --------------------------------
 
@@ -87,3 +93,20 @@ dom = elem "html" HM.empty [head,p1,p2]
     hello = text "Hello, "
     span  = elem "span" (HM.singleton "id" "name") [text "world!"]
     p2    = elem "p"    (HM.singleton "class" "inner") [text "Goodbye!\n    "]
+
+
+
+css = "h1, h2, h3 { margin: auto; color: #cc0000; }\n\
+      \div.note { margin-bottom: 20px; padding: 10px; }\n\
+      \#answer { display: none; }"
+
+sheet = Stylesheet [ Rule [ Simple (Just "h1") Nothing []
+                          , Simple (Just "h2") Nothing []
+                          , Simple (Just "h3") Nothing [] ]
+                          [ Declaration "margin" (Keyword "auto")
+                          , Declaration "color"  (Color 204 0 0 255) ]
+                   , Rule [ Simple (Just "div") Nothing ["note"] ]
+                          [ Declaration "margin-bottom" (Length 20 Px)
+                          , Declaration "padding" (Length 10 Px) ]
+                   , Rule [ Simple Nothing (Just "answer") [] ]
+                          [ Declaration "display" (Keyword "none") ] ]
