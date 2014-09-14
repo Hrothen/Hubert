@@ -71,9 +71,9 @@ rule = do
 -- rule = liftA2 Rule selectors declarations
 -- rule = Rule <$> selectors <*> declarations
 
-selectors = (sortBy comp) <$> sepEndBy1 selector comma <*
-                             (spaces *> char '{' <?> "another selector")
-  where comma = between spaces spaces (char ',')
+selectors = (sortBy comp) <$> sepBy1 (selector <* spaces) comma
+  where -- comma = between spaces spaces (char ',')
+        comma = char ',' <* spaces
         comp a b = spec a `compare` spec b
 
 
