@@ -35,7 +35,8 @@ Test-Suite hunit-tests
   main-is:          tests.hs
   other-modules:    Dom,
                     HTML.Parser,
-                    HTML.Parsec
+                    HTML.Parsec,
+                    CSS
   build-depends:    base >= 4.7 && < 5,
                     unordered-containers >=0.2 && <0.3,
                     mtl >= 2.2.1,
