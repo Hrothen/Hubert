@@ -47,10 +47,17 @@ data Unit = Px --only Px for now
 
 type Specificity = (Word,Word,Word)
 
+-- compute the specificity of a Selector
+spec :: Selector -> Specificity
+spec (Simple name id cls) = (maybeLen id, fromIntegral $ length cls, maybeLen name)
+  where maybeLen = fromIntegral . maybe 0 T.length
+
 
 -- an empty selector
 nilS = Simple Nothing Nothing []
 
+
+-- parse an entire CSS document into a Stylesheet
 parseCSS :: T.Text -> Either ParseError Stylesheet
 parseCSS css = case runParser rules nilS "" css of
     Left err -> Left err
@@ -74,10 +81,6 @@ selectors = (sortBy comp) <$> sepBy1 (selector <* spaces) comma
         comp a b = spec a `compare` spec b
 
 
-spec :: Selector -> Specificity
-spec (Simple name id cls) = (maybeLen id, fromIntegral $ length cls, maybeLen name)
-  where maybeLen = fromIntegral . maybe 0 T.length
-
 -- parse a simple selector
 selector = do
     putState nilS
@@ -85,18 +88,22 @@ selector = do
     getState
 
 
+-- selector id
 id = do
     char '#'
     i <- identifier
     modifyState (\(Simple n _ cs) -> Simple n (Just i) cs)
 
+-- selector class
 cls = do
     char '.'
     c <- identifier
     modifyState (\(Simple n i cs) -> Simple n i (cs++[c]))
 
+-- universal selector
 univ = char '*' >> return ()
 
+-- selector name
 name = do
     n' <- validId
     n  <- identifier
@@ -108,14 +115,12 @@ declarations = do
     char '{'
     spaces *> manyTill (declaration <* spaces) (char '}')
 
+
 declaration = do
     n <- identifier
-    spaces
-    char ':'
-    spaces
+    spaces >> char ':' >> spaces
     v <- value
-    spaces
-    char ';'
+    spaces >> char ';'
     return $ Declaration n v
 
 
@@ -127,9 +132,12 @@ value = len <|> color <|> keyword
 --     return $ Length f u
 len = Length <$> float <*> unit
 
+-- parse a floating point number
 float :: Stream s m Char => ParsecT s u m Float
 float = (fst . head . readFloat) <$> many (digit <|> (char '.'))
 
+-- parse the unit type in a Value
+-- currently only Px is supported
 unit = do
     char 'p' <|> char 'P'
     char 'x' <|> char 'X'
@@ -149,5 +157,4 @@ identifier = T.pack <$> many validId
 validId = alphaNum <|> char '-' <|> char '_'
 
 -- manyTill, but the terminal parser is optional
--- manyUnless p end = many (p <* notFollowedBy end)
 manyUnless p end = many ((notFollowedBy end) *> p)
