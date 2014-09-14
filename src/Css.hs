@@ -17,7 +17,7 @@ import Data.Word (Word(..), Word8(..))
 import Data.List (sortBy)
 import Data.Maybe (maybe)
 import Numeric (readFloat, readHex)
-import Control.Applicative ((<*), (*>), (<$>), liftA, liftA2)
+import Control.Applicative ((<*), (*>), (<$>), (<*>), liftA, liftA2)
 
 import Text.Parsec
 import Text.Parsec.Text
@@ -61,19 +61,16 @@ parseCSS css = case runParser rules nilS "" css of
 rules = spaces >> manyTill (rule <* spaces) eof
 
 
-rule = do
-    s <- selectors
-    d <- declarations
-    return $ Rule s d
+-- rule = do
+--     s <- selectors
+--     d <- declarations
+--     return $ Rule s d
 
--- CHECKME: does the applicative version of rule follow parsing order?
--- rule = liftM2 Rule selectors declarations
--- rule = liftA2 Rule selectors declarations
--- rule = Rule <$> selectors <*> declarations
+rule = Rule <$> selectors <*> declarations
+
 
 selectors = (sortBy comp) <$> sepBy1 (selector <* spaces) comma
-  where -- comma = between spaces spaces (char ',')
-        comma = char ',' <* spaces
+  where comma = char ',' <* spaces
         comp a b = spec a `compare` spec b
 
 
@@ -124,10 +121,11 @@ declaration = do
 
 value = len <|> color <|> keyword
 
-len = do
-    f <- float
-    u <- unit
-    return $ Length f u
+-- len = do
+--     f <- float
+--     u <- unit
+--     return $ Length f u
+len = Length <$> float <*> unit
 
 float :: Stream s m Char => ParsecT s u m Float
 float = (fst . head . readFloat) <$> many (digit <|> (char '.'))
