@@ -17,7 +17,7 @@ import Data.Word (Word(..), Word8(..))
 import Data.List (sortBy)
 import Data.Maybe (maybe)
 import Numeric (readFloat, readHex)
-import Control.Applicative ((<*), (*>), (<$>), (<*>), liftA, liftA2)
+import Control.Applicative ((<*), (*>), (<$>), (<*>))
 
 import Text.Parsec
 import Text.Parsec.Text
