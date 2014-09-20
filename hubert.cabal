@@ -18,8 +18,11 @@ cabal-version:       >=1.10
 executable hubert
   main-is:             Main.hs
   other-modules:       Dom,
-                       HTML.Parser
-                       HTML.Parsec       
+                       HTML.Parser,
+                       HTML.Parsec,
+                       CSS,
+                       Style
+
   -- other-extensions:    
   build-depends:       base >=4.7 && <5,
                        unordered-containers >=0.2 && <0.3,
@@ -36,7 +39,8 @@ Test-Suite hunit-tests
   other-modules:    Dom,
                     HTML.Parser,
                     HTML.Parsec,
-                    CSS
+                    CSS,
+                    Style
   build-depends:    base >= 4.7 && < 5,
                     unordered-containers >=0.2 && <0.3,
                     mtl >= 2.2.1,
