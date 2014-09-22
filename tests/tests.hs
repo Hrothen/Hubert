@@ -126,15 +126,15 @@ css2 = Stylesheet [ Rule [ Simple (Just "head") Nothing [] ]
 
 styletree = NTree (Element (ElementData "html" empt),empt) [head,p1,p2]
   where
-    head = NTree (Element (ElementData "head" empt),rule1) [title]
-    title = NTree (Element (ElementData "title" empt),empt) [test']
-    test' = NTree (Text "Test",empt) []
-    p1 = NTree (Element (ElementData "p" (HM.singleton "class" "inner")),rule2) [hello,span]
-    hello = NTree (Text "Hello, ",empt) []
-    span = NTree (Element (ElementData "span" (HM.singleton "id" "name")),empt) [world]
-    world = NTree (Text "world!",empt) []
-    p2 = NTree (Element (ElementData "p" (HM.singleton "class" "inner")),rule2) [goodbye]
+    head    = NTree (Element (ElementData "head" empt),rule1) [title]
+    title   = NTree (Element (ElementData "title" empt),empt) [test']
+    test'   = NTree (Text "Test",empt) []
+    p1      = NTree (Element (ElementData "p" (HM.singleton "class" "inner")),rule2) [hello,span]
+    hello   = NTree (Text "Hello, ",empt) []
+    span    = NTree (Element (ElementData "span" (HM.singleton "id" "name")),empt) [world]
+    world   = NTree (Text "world!",empt) []
+    p2      = NTree (Element (ElementData "p" (HM.singleton "class" "inner")),rule2) [goodbye]
     goodbye = NTree (Text "Goodbye!\n    ",empt) []
-    empt = HM.empty
-    rule1 = HM.fromList [("margin",Keyword "auto"),("color",Color 0 0 0 255)]
-    rule2 = HM.singleton "padding" (Length 17 Px)
+    empt    = HM.empty
+    rule1   = HM.fromList [("margin",Keyword "auto"),("color",Color 0 0 0 255)]
+    rule2   = HM.singleton "padding" (Length 17 Px)
