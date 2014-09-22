@@ -6,9 +6,11 @@ module CSS
     , Declaration(..)
     , Value(..)
     , Unit(..)
+    , Specificity(..)
     , parseCSS
     , selectors
     , declarations
+    , spec
     ) where
 
 import Prelude hiding (id)

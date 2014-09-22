@@ -17,6 +17,7 @@ import qualified HTML.Parser as PR
 import qualified HTML.Parsec as PS
 import Dom
 import CSS
+import Style
 
 
 main = runTestTT tests
@@ -27,7 +28,8 @@ tests = TestList [TestLabel "ParserS html" htmlPR,
                   TestLabel "Parsec html"  htmlPS,
                   TestLabel "Parsec text"  textPS,
                   TestLabel "Parsec elem"  elemPS,
-                  TestLabel "CSS sheet"    testCss]
+                  TestLabel "CSS sheet"    testCss,
+                  TestLabel "Apply stlyes" testStyle ]
 
 
 --------------------------- PARSER_S TESTS ------------------------------
@@ -61,6 +63,10 @@ elemPS = parseTest "for valid elem" testElem $
 ------------------------------ CSS TESTS ----------------------------
 
 testCss = parseTest "for valid css" sheet $ parseCSS css
+
+------------------------------ STYLE TESTS --------------------------
+
+testStyle = TestCase $ assertEqual "styletree" styletree $ styleTree dom css2 
 
 ----------------------------- SHARED --------------------------------
 
@@ -110,3 +116,25 @@ sheet = Stylesheet [ Rule [ Simple (Just "h1") Nothing []
                           , Declaration "padding" (Length 10 Px) ]
                    , Rule [ Simple Nothing (Just "answer") [] ]
                           [ Declaration "display" (Keyword "none") ] ]
+
+
+css2 = Stylesheet [ Rule [ Simple (Just "head") Nothing [] ]
+                         [ Declaration "margin" (Keyword "auto")
+                         , Declaration "color"  (Color 0 0 0 255) ]
+                  , Rule [ Simple (Just "p") Nothing ["inner"] ]
+                         [ Declaration "padding" (Length 17 Px) ] ]
+
+styletree = NTree (Element (ElementData "html" empt),empt) [head,p1,p2]
+  where
+    head = NTree (Element (ElementData "head" empt),rule1) [title]
+    title = NTree (Element (ElementData "title" empt),empt) [test']
+    test' = NTree (Text "Test",empt) []
+    p1 = NTree (Element (ElementData "p" (HM.singleton "class" "inner")),rule2) [hello,span]
+    hello = NTree (Text "Hello, ",empt) []
+    span = NTree (Element (ElementData "span" (HM.singleton "id" "name")),empt) [world]
+    world = NTree (Text "world!",empt) []
+    p2 = NTree (Element (ElementData "p" (HM.singleton "class" "inner")),rule2) [goodbye]
+    goodbye = NTree (Text "Goodbye!\n    ",empt) []
+    empt = HM.empty
+    rule1 = HM.fromList [("margin",Keyword "auto"),("color",Color 0 0 0 255)]
+    rule2 = HM.singleton "padding" (Length 17 Px)
