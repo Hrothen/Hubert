@@ -29,15 +29,31 @@ matches e sl@(Simple _ _ _) = matchSimple e sl
 -- matchSimple returns False if any selector field that exists
 -- does not match the given element
 matchSimple :: ElementData -> Selector -> Bool
-matchSimple e@(ElementData nm _) (Simple n i c) = 
-  let x = fmap (==nm) n
-      y = if i == Nothing then Nothing else Just $ i == (findID e)
-      z = if not $ null c then all (flip HS.member (classes e)) c else True
-  in case (x,y,z) of
-      (Nothing, Nothing, b3) -> b3
-      (Nothing, Just b2, b3) -> b2 && b3
-      (Just b1, Nothing, b3) -> b1 && b3
-      (Just b1, Just b2, b3) -> b1 && b2 && b3
+matchSimple e (Simple Nothing  Nothing  c) =  matchClasses e c
+matchSimple e (Simple (Just n) Nothing  c) =  matchNames e n
+                                           && matchClasses e c
+matchSimple e (Simple Nothing (Just i)  c) =  matchId e i
+                                           && matchClasses e c
+matchSimple e (Simple (Just n) (Just i) c) =  matchNames e n
+                                           && matchId e i
+                                           && matchClasses e c
+
+matchNames (ElementData nm _) n = n == nm
+
+matchId e i = findID e == Just i
+
+matchClasses e [] = True
+matchClasses e c = all (flip HS.member (classes e)) c
+
+-- matchSimple e@(ElementData nm _) (Simple n i c) = 
+--   let x = fmap (==nm) n
+--       y = if i == Nothing then Nothing else Just $ i == (findID e)
+--       z = if not $ null c then all (flip HS.member (classes e)) c else True
+--   in case (x,y,z) of
+--       (Nothing, Nothing, b3) -> b3
+--       (Nothing, Just b2, b3) -> b2 && b3
+--       (Just b1, Nothing, b3) -> b1 && b3
+--       (Just b1, Just b2, b3) -> b1 && b2 && b3
 
 
 -- find the first rule that matches the given element
