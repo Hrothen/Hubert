@@ -1,6 +1,7 @@
 module Style where
 
 import Data.Maybe (mapMaybe)
+import Data.Function (on)
 import Data.List (sortBy,find)
 
 import qualified Data.HashMap.Strict as HM
@@ -70,9 +71,9 @@ matchingRules e (Stylesheet rules) = mapMaybe (matchRule e) rules
 
 -- Build a map of all the properties attached to an Element
 specifiedValues :: ElementData -> Stylesheet -> PropertyMap
-specifiedValues e s = HM.fromList $ concatMap expand $ rules
+specifiedValues e s = HM.fromList $ concatMap expand rules
   where
-    rules = sortBy (\a b->fst a `compare` fst b) $ matchingRules e s
+    rules = sortBy (compare `on` fst) $ matchingRules e s
     expand (_,Rule _ ds) = map (\(Declaration n v) -> (n,v)) ds
 
 
