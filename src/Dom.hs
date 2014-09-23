@@ -33,7 +33,7 @@ text :: T.Text -> Node
 text = flip NTree [] . Text
 
 elem :: T.Text -> AttrMap -> [Node] -> Node
-elem name atts cs = NTree (Element (ElementData name atts)) cs
+elem name atts = NTree (Element (ElementData name atts))
 
 findAttr :: ElementData -> T.Text -> Maybe T.Text
 findAttr (ElementData _ m) k = HM.lookup k m

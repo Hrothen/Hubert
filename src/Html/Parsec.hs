@@ -5,7 +5,7 @@ module HTML.Parsec
       parseElement
     ) where
 
-import Control.Monad (liftM)
+import Control.Monad (liftM, void)
 import Control.Applicative ((<*))
 
 import qualified Data.Text as T
@@ -27,7 +27,7 @@ parseHtml s = case parse parseNodes "" s of
 
 parseNodes = spaces >> manyTill (spacesAfter parseNode) end
   where
-    end = eof <|> (try (string "</") >> return ())
+    end = eof <|> void (try (string "</"))
 
 
 parseNode = parseElement <|> parseText

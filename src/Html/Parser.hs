@@ -8,7 +8,7 @@ module HTML.Parser
     ) where
 
 import Data.Char (isAlphaNum, isSpace)
-import Control.Monad (liftM)
+import Control.Monad (liftM, unless)
 
 import Control.Monad.State.Lazy (StateT(..), evalState, get, put)
 import Control.Monad.Except (ExceptT(..), runExceptT, throwError)
@@ -24,7 +24,7 @@ data Parser = Parser T.Text
 type ParserS = ExceptT T.Text (StateT Parser Identity)
 
 
-runParserS p s = evalState (runExceptT p) s
+runParserS p = evalState (runExceptT p)
 
 nextchr :: Parser -> Char
 nextchr (Parser s) = T.head s -- errors if called when string is empty
@@ -59,7 +59,7 @@ consumeWhitespace = consumeWhile isSpace
 -- use this to mimic robinson's (improper, soon to be depriciated)
 -- use of assert
 assert :: T.Text -> Bool -> ParserS ()
-assert s b = if b then return () else throwError s
+assert s b = unless b $ throwError s
 
 
 parseTagName :: ParserS T.Text

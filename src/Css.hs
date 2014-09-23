@@ -19,6 +19,7 @@ import Data.Word (Word(..), Word8(..))
 import Data.List (sortBy)
 import Data.Maybe (maybe)
 import Numeric (readFloat, readHex)
+import Control.Monad (void)
 import Control.Applicative ((<*), (*>), (<$>), (<*>))
 
 import Text.Parsec
@@ -78,7 +79,7 @@ rules = spaces >> manyTill (rule <* spaces) eof
 rule = Rule <$> selectors <*> declarations
 
 
-selectors = (sortBy comp) <$> sepBy1 (selector <* spaces) comma
+selectors = sortBy comp <$> sepBy1 (selector <* spaces) comma
   where comma = char ',' <* spaces
         comp a b = spec a `compare` spec b
 
@@ -103,7 +104,7 @@ cls = do
     modifyState (\(Simple n i cs) -> Simple n i (cs++[c]))
 
 -- universal selector
-univ = char '*' >> return ()
+univ = void (char '*')
 
 -- selector name
 name = do
@@ -136,7 +137,7 @@ len = Length <$> float <*> unit
 
 -- parse a floating point number
 float :: Stream s m Char => ParsecT s u m Float
-float = (fst . head . readFloat) <$> many (digit <|> (char '.'))
+float = (fst . head . readFloat) <$> many (digit <|> char '.')
 
 -- parse the unit type in a Value
 -- currently only Px is supported
@@ -159,4 +160,4 @@ identifier = T.pack <$> many validId
 validId = alphaNum <|> char '-' <|> char '_'
 
 -- manyTill, but the terminal parser is optional
-manyUnless p end = many ((notFollowedBy end) *> p)
+manyUnless p end = many (notFollowedBy end *> p)
