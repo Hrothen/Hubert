@@ -24,7 +24,7 @@ type MatchedRule = (Specificity, Rule)
 
 -- check if a selector matches an element
 matches :: ElementData -> Selector -> Bool
-matches e sl@(Simple _ _ _) = matchSimple e sl
+matches e sl@Simple{} = matchSimple e sl
 
 
 -- matchSimple returns False if any selector field that exists
