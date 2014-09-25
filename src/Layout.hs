@@ -1,6 +1,7 @@
 module Layout where
 
 import Dom
+import Style
 
 data Dimensions = Dimensions { x       :: Float
                              , y       :: Float
@@ -17,4 +18,6 @@ data EdgeSize = EdgeSize { left   :: Float
 
 type LayoutBox = NTree (Dimensions,BoxType)
 
-data BoxType = BlockNode StyledNode | InlineNode StyledNode | AnonymousBlock
+type StyledElement = (NodeType,PropertyMap)
+
+data BoxType = BlockNode StyledElement | InlineNode StyledElement | AnonymousBlock
