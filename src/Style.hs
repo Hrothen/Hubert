@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 module Style where
 
 import Data.Maybe (mapMaybe)
@@ -21,6 +22,18 @@ type StyledNode = NTree (NodeType,PropertyMap)
 -- but carrying the specificity around in the Rule might be weird too?
 -- TODO: look into changing this
 type MatchedRule = (Specificity, Rule)
+
+data Display = Inline | Block | DisplayNone
+
+-- if name exists, return its specified value
+value :: StyledNode -> T.Text -> Maybe Value
+value (NTree node _) name = HM.lookup name (snd node)
+
+display :: StyledNode -> Display
+display n = case value n "display" of
+    Just (Keyword "block") -> Block
+    Just (Keyword "none") -> DisplayNone
+    _ -> Inline
 
 -- check if a selector matches an element
 matches :: ElementData -> Selector -> Bool
