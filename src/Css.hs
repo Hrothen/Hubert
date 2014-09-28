@@ -48,6 +48,10 @@ data Value = Keyword T.Text
 data Unit = Px --only Px for now
   deriving (Show, Eq)
 
+toPx :: Value -> Float
+toPx (Length len Px) = len
+toPx _               = 0
+
 type Specificity = (Word,Word,Word)
 
 -- compute the specificity of a Selector

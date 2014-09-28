@@ -1,9 +1,9 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Style where
 
-import Data.Maybe (mapMaybe)
+import Data.Maybe (mapMaybe, maybe)
 import Data.Function (on)
-import Data.List (sortBy,find)
+import Data.List (sortBy, find)
 
 import qualified Data.HashMap.Strict as HM
 import qualified Data.HashSet as HS
@@ -24,10 +24,16 @@ type StyledNode = NTree (NodeType,PropertyMap)
 type MatchedRule = (Specificity, Rule)
 
 data Display = Inline | Block | DisplayNone
+  deriving (Eq)
 
 -- if name exists, return its specified value
 value :: StyledNode -> T.Text -> Maybe Value
 value (NTree node _) name = HM.lookup name (snd node)
+
+-- return the specified value of the first property in ks to exist
+-- or def if no properties match
+lookup :: StyledNode -> [T.Text] -> Value -> Value
+lookup s ks def = maybe def id $ find (value s) ks
 
 display :: StyledNode -> Display
 display n = case value n "display" of
