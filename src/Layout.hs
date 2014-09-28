@@ -58,38 +58,132 @@ layout l@(NTree (_,box)) contBlock = case box of
     InlineNode _   -> undefined
     AnonymousBlock -> undefined
 
-calcWidth :: LayoutBox -> Dimensions -> Dimensions
-calcWidth root@(NTree (dim,_) _) contBlock = let
+
+calcWidth :: LayoutBox -> Dimensions -> LayoutBox
+calcWidth root@(NTree (dim,x) y) contBlock = let
     style = getStyledElem root
     auto = Keyword "auto"
     zero = Length 0 Px
-    width'' = maybe auto id $ value style "width"
-    mlf'' = lookup style ["margin-left"       , "margin"]       zero
-    mrt'' = lookup style ["margin-right"      , "margin"]       zero
-    blw' = lookup style ["border-left-width" , "border-width"] zero
-    brw' = lookup style ["border-right-width", "border-width"] zero
-    plf' = lookup style ["padding-left"      , "padding"]      zero
-    prt' = lookup style ["padding-right"     , "padding"]      zero
-    total = sum $ map toPix [width,mlf,mrt,blw,brw,plf,prt]
-    (mlf',mrt') = checkAutoMargins
+    w = maybe auto id $ value style "width"
+    vals = map (\a -> lookup style a zero) [
+                  ["margin-left"       , "margin"]
+                , ["margin-right"      , "margin"]
+                , ["border-left-width" , "border-width"]
+                , ["border-right-width", "border-width"]
+                , ["padding-left"      , "padding"]
+                , ["padding-right"     , "padding"] ]
+    total = sum $ map toPix (w:vals)
     underflow = (width contBlock) - total
 
+    ([ml'',mr''],vals') = splitAt 2 vals
+    (w',ml',mr') = checkUnderflow w $ checkAutoMargins (ml'',mr'')
+
     checkAutoMargins margins
-        | width'' /= zuto && total > (width'' contBlock) = case margins of
+        | w /= auto && total > (width contBlock) = case margins of
             (auto,auto) -> (zero,zero)
             (auto,x)    -> (zero,x)
             (x,auto)    -> (x,zero)
             (x,y)       -> (x,y)
         | otherwise = margins
 
-    (width',mlf,mrt) =case (width' == auto, mlf' == auto, mrt' == auto) of
-    [width,mlf,mrt,blw,brw,plf,prt] = map toPix [width',mlf'',mrt'',blw,brw,plf,prt]
+    checkUnderflow w (mlf,mrt) = case (w == auto, mlf == auto, mrt == auto) of
+        (False,False,False) -> (w , mlf, Length (toPix mrt + underflow) Px)
+        (False,False,True)  -> (w , mlf, Length underflow Px)
+        (False,True,False)  -> (w , Length underflow Px    , mrt)
+        (False,True,True)   -> (w , Length (underflow/2) Px, Length (underflow/2) Px)
+        (True,_,_)          ->
+            let l = if mlf == auto then zero else mlf
+                r = if mrt == auto then zero else mrt
+             in if underflow >= 0  then (Length underflow px,l,r)
+                                   else (zero,l,Length (toPix r + underflow) Px)
 
-    updateWidth w (NTree (d,x) y) = NTree (d{width=w},x) y
-    updateMargin l r (NTree ((Dimensions d1 d2 d3 d4 d5 d6 m),x) y) =
-        NTree (Dimensions d1 d2 d3 d4 d5 d6 m{left=l,right=r},x) y
+    [w'',ml,mr,blw,brw,plf,prt] = map toPix (w':ml':mr':vals')
 
-    in updateWidth width $ updateMargin mlf mrt $ updateBorder blw brw $ updatePadding plf prt 
+
+    updateDim d = let pad = padding d
+                      mar = margin d
+                      bor = border d
+                   in d{ width = w''
+                       , padding = pad{ left = plf, right = plr}
+                       , boarder = bor{ left = blf, right = blr}
+                       , margin  = mar{ left = ml,  right = mr} }
+
+    in in NTree (updateDim dim,x) y
+
+
+calcPosition :: LayoutBox -> Dimensions -> Dimensions
+calcPosition root@(NTree (dim,_)_) contBlock = let
+    style = getStyledElem root
+    zero = Length 0 Px
+
+    vals = map (\a -> lookup style a zero) [
+                  ["margin-top"         , "margin"]
+                , ["margin-bottom"      , "margin"]
+                , ["border-top-width"   , "border-width"]
+                , ["border-bottom-width", "border-width"]
+                , ["padding-top"        , "padding"]
+                , ["padding-bottom"     , "padding"] ]
+
+    updateDim d [mt,mb,bt,bb,pt,pb] =
+        let pad = padding d
+            mar = margin d
+            bor = border d
+            x' = (x contBlock)
+               + (left $ margin d)
+               + (left $ border d)
+               + (left $ padding d)
+            y' = (y contBlock) + (height contBlock) + pt + bt + mt
+         in d{ x = x'
+             , y = y'
+             , padding = pad{ top = pt, bottom = pb }
+             , border  = bor{ top = bt, bottom = bb }
+             , margin  = mar{ top = mt, bottom = mb } }
+
+-- calcWidth :: LayoutBox -> Dimensions -> LayoutBox
+-- calcWidth root@(NTree (dim,x) y) contBlock = let
+--     style = getStyledElem root
+--     auto = Keyword "auto"
+--     zero = Length 0 Px
+--     width'' = maybe auto id $ value style "width"
+--     mlf''' = lookup style ["margin-left"       , "margin"]       zero
+--     mrt''' = lookup style ["margin-right"      , "margin"]       zero
+--     blw' = lookup style ["border-left-width" , "border-width"] zero
+--     brw' = lookup style ["border-right-width", "border-width"] zero
+--     plf' = lookup style ["padding-left"      , "padding"]      zero
+--     prt' = lookup style ["padding-right"     , "padding"]      zero
+--     total = sum $ map toPix [width'',mlf'',mrt'',blw',brw',plf',prt']
+--     (mlf'',mrt'') = checkAutoMargins
+--     underflow = (width contBlock) - total
+-- 
+--     checkAutoMargins margins
+--         | width'' /= auto && total > (width contBlock) = case margins of
+--             (auto,auto) -> (zero,zero)
+--             (auto,x)    -> (zero,x)
+--             (x,auto)    -> (x,zero)
+--             (x,y)       -> (x,y)
+--         | otherwise = margins
+-- 
+--     (width',mlf',mrt') =case (width'' == auto, mlf'' == auto, mrt'' == auto) of
+--         (False,False,False) -> (width'',mlf'', Length (toPix mrt'' + underflow) Px)
+--         (False,False,True)  -> (width'',mlf'', Length underflow Px)
+--         (False,True,False)  -> (width'', Length underflow Px, mrt'')
+--         (False,True,True)   -> (width'', Length (underflow/2) Px, Length (underflow/2) Px)
+--         (True,_,_)          -> let ml = if mlf'' == auto then zero else mlf''
+--                                    mr = if mlr'' == auto then zero else mlr''
+--                                 in if underflow >= 0 then (Length underflow px,ml,mr)
+--                                    else (zero,ml,Length (toPix mr + underflow) Px)
+--     [width,mlf,mrt,blw,brw,plf,prt] = map toPix [width',mlf'',mrt'',blw,brw,plf,prt]
+-- 
+--     updateDim (Dimensions d1 d2 d3 d4 d5 d6 d7) =
+--         Dimensions d1
+--                    d2
+--                    width
+--                    d4
+--                    d5{left=plf,right=prt}
+--                    d6{left=blf,right=brt}
+--                    d7{left=mlf,right=mrt}
+-- 
+--     in NTree (updateDim dim,x) y 
 
 getStyledElem :: LayoutBox -> Maybe StyledElement
 getStyledElem (NTree (_,box) _) = case box of
