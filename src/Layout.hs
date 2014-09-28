@@ -139,6 +139,8 @@ calcPosition root@(NTree (dim,_)_) contBlock = let
              , border  = bor{ top = bt, bottom = bb }
              , margin  = mar{ top = mt, bottom = mb } }
 
+    in updateDim dim vals
+
 -- calcWidth :: LayoutBox -> Dimensions -> LayoutBox
 -- calcWidth root@(NTree (dim,x) y) contBlock = let
 --     style = getStyledElem root
