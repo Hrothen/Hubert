@@ -2,6 +2,7 @@
 module Layout where
 
 import Prelude hiding (lookup)
+import Control.Applicative ((<$>))
 import Data.List (foldl', groupBy)
 import Data.Maybe (fromMaybe)
 
@@ -38,11 +39,13 @@ defaultDim = Dimensions 0 0 0 0 emptyEdge emptyEdge emptyEdge
 -- FIXME: I suspect this function leaks space
 buildLayoutTree :: StyledNode -> Either T.Text LayoutBox
 buildLayoutTree root = case display root of
-    Block       -> Right $ blt root
-    Inline      -> Right $ blt root
+    Block       -> Right $ addDim <$> blt root
+    Inline      -> Right $ addDim <$> blt root
     DisplayNone -> Left "error: root node has display:none"
   where
-    blt rt@(NTree nd cs) = NTree (defaultDim, n) ns
+    addDim x = (defaultDim,x)
+
+    blt rt@(NTree nd cs) = NTree n ns
       where 
         (!n, !ns) = case display rt of
             Block  -> (BlockNode  nd, anonify ns')
@@ -51,10 +54,10 @@ buildLayoutTree root = case display root of
         
         anonify = concatMap foo . groupBy (\x y -> isInline x && isInline y)
         
-        foo x = if isInline $ head x then [NTree (defaultDim, AnonymousBlock) x] else x
+        foo x = if isInline $ head x then [NTree AnonymousBlock x] else x
 
-        isInline (NTree (_,InlineNode{}) _) = True
-        isInline _                          = False
+        isInline (NTree InlineNode{} _) = True
+        isInline _                      = False
         
         ns' = map blt $ filter ((/=DisplayNone) . display) cs
 
@@ -171,51 +174,6 @@ marginBoxHeight (Dimensions _ _ _ h p b m) = sum [ h, top p, bottom p
                                                  , top b, bottom b
                                                  , top m, bottom m ]
 
--- calcWidth :: LayoutBox -> Dimensions -> LayoutBox
--- calcWidth root@(NTree (dim,x) y) contBlock = let
---     style = getStyledElem root
---     auto = Keyword "auto"
---     zero = Length 0 Px
---     width'' = maybe auto id $ value style "width"
---     mlf''' = lookup style ["margin-left"       , "margin"]       zero
---     mrt''' = lookup style ["margin-right"      , "margin"]       zero
---     blw' = lookup style ["border-left-width" , "border-width"] zero
---     brw' = lookup style ["border-right-width", "border-width"] zero
---     plf' = lookup style ["padding-left"      , "padding"]      zero
---     prt' = lookup style ["padding-right"     , "padding"]      zero
---     total = sum $ map toPx [width'',mlf'',mrt'',blw',brw',plf',prt']
---     (mlf'',mrt'') = checkAutoMargins
---     underflow = (width contBlock) - total
--- 
---     checkAutoMargins margins
---         | width'' /= auto && total > (width contBlock) = case margins of
---             (auto,auto) -> (zero,zero)
---             (auto,x)    -> (zero,x)
---             (x,auto)    -> (x,zero)
---             (x,y)       -> (x,y)
---         | otherwise = margins
--- 
---     (width',mlf',mrt') =case (width'' == auto, mlf'' == auto, mrt'' == auto) of
---         (False,False,False) -> (width'',mlf'', Length (toPx mrt'' + underflow) Px)
---         (False,False,True)  -> (width'',mlf'', Length underflow Px)
---         (False,True,False)  -> (width'', Length underflow Px, mrt'')
---         (False,True,True)   -> (width'', Length (underflow/2) Px, Length (underflow/2) Px)
---         (True,_,_)          -> let ml = if mlf'' == auto then zero else mlf''
---                                    mr = if mlr'' == auto then zero else mlr''
---                                 in if underflow >= 0 then (Length underflow px,ml,mr)
---                                    else (zero,ml,Length (toPx mr + underflow) Px)
---     [width,mlf,mrt,blw,brw,plf,prt] = map toPx [width',mlf'',mrt'',blw,brw,plf,prt]
--- 
---     updateDim (Dimensions d1 d2 d3 d4 d5 d6 d7) =
---         Dimensions d1
---                    d2
---                    width
---                    d4
---                    d5{left=plf,right=prt}
---                    d6{left=blf,right=brt}
---                    d7{left=mlf,right=mrt}
--- 
---     in NTree (updateDim dim,x) y 
 
 getStyledElem :: LayoutBox -> StyledNode
 getStyledElem (NTree (_,box) _) = case box of
