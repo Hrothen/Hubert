@@ -21,7 +21,8 @@ executable hubert
                        HTML.Parser,
                        HTML.Parsec,
                        CSS,
-                       Style
+                       Style,
+                       Layout
 
   -- other-extensions:    
   build-depends:       base >=4.7 && <5,
@@ -40,7 +41,8 @@ Test-Suite hunit-tests
                     HTML.Parser,
                     HTML.Parsec,
                     CSS,
-                    Style
+                    Style,
+                    Layout
   build-depends:    base >= 4.7 && < 5,
                     unordered-containers >=0.2 && <0.3,
                     mtl >= 2.2.1,

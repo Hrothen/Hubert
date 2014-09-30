@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Style where
 
-import Data.Maybe (mapMaybe, maybe)
+import Data.Maybe (mapMaybe, maybe, isJust, fromJust)
 import Data.Function (on)
 import Data.List (sortBy, find)
 
@@ -33,7 +33,8 @@ value (NTree node _) name = HM.lookup name (snd node)
 -- return the specified value of the first property in ks to exist
 -- or def if no properties match
 lookup :: StyledNode -> [T.Text] -> Value -> Value
-lookup s ks def = maybe def id $ find (value s) ks
+lookup s ks def = maybe def (fromJust . value s) (find (isJust . value s) ks)
+
 
 display :: StyledNode -> Display
 display n = case value n "display" of

@@ -11,6 +11,7 @@ module CSS
     , selectors
     , declarations
     , spec
+    , toPx
     ) where
 
 import Prelude hiding (id)

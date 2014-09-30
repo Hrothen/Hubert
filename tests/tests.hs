@@ -3,6 +3,7 @@ module Main where
 
 import Prelude hiding (elem)
 import Data.Either (either)
+import Control.Monad (liftM)
 
 import Test.HUnit
 
@@ -18,6 +19,7 @@ import qualified HTML.Parsec as PS
 import Dom
 import CSS
 import Style
+import Layout
 
 
 main = runTestTT tests
@@ -138,3 +140,7 @@ styletree = NTree (Element (ElementData "html" empt),empt) [head,p1,p2]
     empt    = HM.empty
     rule1   = HM.fromList [("margin",Keyword "auto"),("color",Color 0 0 0 255)]
     rule2   = HM.singleton "padding" (Length 17 Px)
+
+initialContBlock = defaultDim{width=800, height=800}
+
+testLayout = liftM (flip layout initialContBlock) (buildLayoutTree styletree)
