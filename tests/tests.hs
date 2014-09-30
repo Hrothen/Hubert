@@ -143,4 +143,5 @@ styletree = NTree (Element (ElementData "html" empt),empt) [head,p1,p2]
 
 initialContBlock = defaultDim{width=800, height=800}
 
-testLayout = liftM (flip layout initialContBlock) (buildLayoutTree styletree)
+-- if we attempt to compute this expression right now, we'll get a runtime error
+testLayout = buildLayoutTree styletree >>= flip layout initialContBlock

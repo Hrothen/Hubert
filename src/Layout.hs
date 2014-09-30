@@ -70,9 +70,6 @@ layout l@(NTree (_,box)_) contBlock = case box of
     AnonymousBlock -> undefined
 
 
-layoutBlock :: Dimensions -> LayoutBox -> Either T.Text LayoutBox
--- layoutBlock dim = calcHeight . layoutChildren
---                 . calcPosition dim . calcWidth dim
 layoutBlock dim root = calcWidth dim root >>= calcPosition dim
               >>= layoutChildren >>= calcHeight
 
@@ -158,13 +155,6 @@ calcPosition contBlock root@(NTree (dim,a)b) = do
 
     return $ NTree (updateDim dim vals,a) b
 
-
--- layoutChildren :: LayoutBox -> LayoutBox
--- layoutChildren (NTree (dim,x) cs) = NTree (dim',x) cs'
---   where
---     (dim',cs') = foldl' foo (dim,[]) cs
---     foo (d,acc) c@(NTree (cdim,_) _) = let c' = layout c d in
---         (d{height = height d + marginBoxHeight cdim}, acc ++ [c'])
 
 layoutChildren (NTree (dim,x) cs) = do
     (dim',cs') <- foldM foo (dim,[]) cs
