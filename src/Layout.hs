@@ -3,6 +3,7 @@ module Layout where
 
 import Prelude hiding (lookup)
 import Data.List (foldl', groupBy)
+import Data.Maybe (fromMaybe)
 
 import qualified Data.Text as T
 
@@ -74,7 +75,7 @@ calcWidth contBlock root@(NTree (dim,x) y) = let
     style = getStyledElem root
     auto = Keyword "auto"
     zero = Length 0 Px
-    w = maybe auto id $ value style "width"
+    w = fromMaybe auto $ value style "width"
     vals = map (\a -> lookup style a zero) [
                   ["margin-left"       , "margin"]
                 , ["margin-right"      , "margin"]
@@ -83,13 +84,13 @@ calcWidth contBlock root@(NTree (dim,x) y) = let
                 , ["padding-left"      , "padding"]
                 , ["padding-right"     , "padding"] ]
     total = sum $ map toPx (w:vals)
-    underflow = (width contBlock) - total
+    underflow = width contBlock - total
 
     ([ml'',mr''],vals') = splitAt 2 vals
     (w',ml',mr') = checkUnderflow w $ checkAutoMargins (ml'',mr'')
 
     checkAutoMargins (x,y)
-        | w /= auto && total > (width contBlock) = (check x,check y)
+        | w /= auto && total > width contBlock = (check x,check y)
         | otherwise = (x,y)
       where check a = if a == auto then zero else a
 
@@ -135,11 +136,11 @@ calcPosition contBlock root@(NTree (dim,a)b) = let
         let pad = padding d
             mar = margin d
             bor = border d
-            x' = (x contBlock)
-               + (left $ margin d)
-               + (left $ border d)
-               + (left $ padding d)
-            y' = (y contBlock) + (height contBlock) + pt + bt + mt
+            x' = x contBlock
+               + left (margin d)
+               + left (border d)
+               + left (padding d)
+            y' = y contBlock + height contBlock + pt + bt + mt
          in d{ x = x'
              , y = y'
              , padding = pad{ top = pt, bottom = pb }
