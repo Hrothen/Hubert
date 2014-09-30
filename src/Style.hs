@@ -35,11 +35,11 @@ value (NTree node _) name = HM.lookup name (snd node)
 lookup :: StyledNode -> [T.Text] -> Value -> Value
 lookup s ks def = maybe def (fromJust . value s) (find (isJust . value s) ks)
 
-
+-- look up the display value of a node
 display :: StyledNode -> Display
 display n = case value n "display" of
     Just (Keyword "block") -> Block
-    Just (Keyword "none") -> DisplayNone
+    Just (Keyword "none")  -> DisplayNone
     _ -> Inline
 
 -- check if a selector matches an element

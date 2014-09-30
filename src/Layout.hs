@@ -53,9 +53,9 @@ buildLayoutTree root = case display root of
             Inline -> (InlineNode nd, ns')
             -- won't ever hit DisplayNone, it's filtered out
         
-        anonify = concatMap foo . groupBy (\x y -> isInline x && isInline y)
+        anonify = concatMap mergeInlines . groupBy (\x y -> isInline x && isInline y)
         
-        foo x = if isInline $ head x then [NTree AnonymousBlock x] else x
+        mergeInlines x = if isInline $ head x then [NTree AnonymousBlock x] else x
 
         isInline (NTree InlineNode{} _) = True
         isInline _                      = False
@@ -63,6 +63,7 @@ buildLayoutTree root = case display root of
         ns' = map blt $ filter ((/=DisplayNone) . display) cs
 
 
+-- walk a layout tree, setting the dimensions of each node
 layout :: LayoutBox -> Dimensions -> Either T.Text LayoutBox
 layout l@(NTree (_,box)_) contBlock = case box of
     BlockNode  _   -> layoutBlock contBlock l
@@ -70,9 +71,15 @@ layout l@(NTree (_,box)_) contBlock = case box of
     AnonymousBlock -> undefined
 
 
-layoutBlock dim root = calcWidth dim root >>= calcPosition dim
-              >>= layoutChildren >>= calcHeight
+layoutBlock dim root = calcWidth dim root >>=
+                       calcPosition dim   >>=
+                       layoutChildren     >>=  -- you know what? this might leak
+                       calcHeight
 
+
+-- walk a layout tree, computing the width of each box
+-- NB: This looks really fugly, I am completely sure that there's a nicer
+-- way to write this, but it escapes me at the moment
 calcWidth :: Dimensions -> LayoutBox -> Either T.Text LayoutBox
 calcWidth contBlock root@(NTree (dim,x) y) = do
     style <- getStyledElem root
@@ -123,6 +130,7 @@ calcWidth contBlock root@(NTree (dim,x) y) = do
     return $ NTree (updateDim dim,x) y
 
 
+-- walk a layout tree, computing the position of each box
 calcPosition :: Dimensions -> LayoutBox -> Either T.Text LayoutBox
 calcPosition contBlock root@(NTree (dim,a)b) = do
     style <- getStyledElem root
@@ -155,7 +163,7 @@ calcPosition contBlock root@(NTree (dim,a)b) = do
 
     return $ NTree (updateDim dim vals,a) b
 
-
+-- recursively lay out the children of a node
 layoutChildren (NTree (dim,x) cs) = do
     (dim',cs') <- foldM foo (dim,[]) cs
     return $ NTree (dim',x) cs'
@@ -166,6 +174,7 @@ layoutChildren (NTree (dim,x) cs) = do
             return (d{height = height d + marginBoxHeight cdim}, acc ++ [c'])
 
 
+-- compute the hight of a box
 calcHeight :: LayoutBox -> Either T.Text LayoutBox
 calcHeight root@(NTree (d,x)y) = do
     s <- getStyledElem root
