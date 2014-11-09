@@ -2,6 +2,8 @@
 module Dom where
 
 import Data.Maybe (maybe)
+import Data.Monoid ((<>))
+import Data.Foldable
 
 import qualified Data.HashMap.Strict as HM
 import qualified Data.Text as T
@@ -14,6 +16,10 @@ data NTree a = NTree a [NTree a]
 
 instance Functor NTree where
     fmap f (NTree n ns) = NTree (f n) $ fmap (fmap f) ns
+
+instance Foldable NTree where
+    foldMap f (NTree n []) = f n
+    foldMap f (NTree n ns) = f n <> foldMap (foldMap f) ns
 
 -- data specific to each node type
 data NodeType = Text T.Text 
