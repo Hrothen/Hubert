@@ -141,7 +141,8 @@ styletree = NTree (Element (ElementData "html" empt),empt) [head,p1,p2]
     rule1   = HM.fromList [("margin",Keyword "auto"),("color",Color 0 0 0 255)]
     rule2   = HM.singleton "padding" (Length 17 Px)
 
-initialContBlock = defaultDim{width=800, height=800}
+initialRect = content defaultDim
+initialContBlock = defaultDim{content = initialRect{ width=800, height=800 } }
 
 -- if we attempt to compute this expression right now, we'll get a runtime error
 testLayout = buildLayoutTree styletree >>= flip layout initialContBlock

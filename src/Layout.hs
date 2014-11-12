@@ -13,10 +13,12 @@ import Dom
 import CSS
 import Style
 
-data Dimensions = Dimensions { x       :: Float
-                             , y       :: Float
-                             , width   :: Float
-                             , height  :: Float
+data Rect = Rect { x      :: Float
+                 , y      :: Float
+                 , width  :: Float
+                 , height :: Float }
+
+data Dimensions = Dimensions { content :: Rect
                              , padding :: EdgeSize
                              , border  :: EdgeSize
                              , margin  :: EdgeSize }
@@ -33,8 +35,9 @@ type StyledElement = (NodeType,PropertyMap)
 data BoxType = BlockNode StyledElement | InlineNode StyledElement | AnonymousBlock
 
 emptyEdge = EdgeSize 0 0 0 0
+emptyRect = Rect 0 0 0 0
 
-defaultDim = Dimensions 0 0 0 0 emptyEdge emptyEdge emptyEdge
+defaultDim = Dimensions emptyRect emptyEdge emptyEdge emptyEdge
 
 -- walk the style tree, building a layout tree as we go
 -- FIXME: I suspect this function leaks space
@@ -95,13 +98,13 @@ calcWidth contBlock root@(NTree (dim,x) y) = do
                   , ["padding-left"      , "padding"]
                   , ["padding-right"     , "padding"] ]
       total = sum $ map toPx (w:vals)
-      underflow = width contBlock - total
+      underflow = width (content contBlock) - total
 
       ([ml'',mr''],vals') = splitAt 2 vals
       (w',ml',mr') = checkUnderflow w $ checkAutoMargins (ml'',mr'')
 
       checkAutoMargins (x,y)
-          | w /= auto && total > width contBlock = (check x,check y)
+          | w /= auto && total > width (content contBlock) = (check x,check y)
           | otherwise = (x,y)
         where check a = if a == auto then zero else a
 
@@ -122,10 +125,11 @@ calcWidth contBlock root@(NTree (dim,x) y) = do
       updateDim d = let pad = padding d
                         mar = margin d
                         bor = border d
-                     in d{ width = w''
-                         , padding = pad{ left = plf, right = prt}
-                         , border  = bor{ left = blw, right = brw}
-                         , margin  = mar{ left = ml,  right = mr} }
+                        rec = content d
+                     in d{ content = rec{ width = w'' }
+                         , padding = pad{ left  = plf, right = prt }
+                         , border  = bor{ left  = blw, right = brw }
+                         , margin  = mar{ left  = ml,  right = mr } }
 
     return $ NTree (updateDim dim,x) y
 
@@ -147,16 +151,17 @@ calcPosition contBlock root@(NTree (dim,a)b) = do
                   , ["padding-bottom"     , "padding"] ]
 
       updateDim d [mt,mb,bt,bb,pt,pb] =
-          let pad = padding d
-              mar = margin d
-              bor = border d
-              x' = x contBlock
+          let pad  = padding d
+              mar  = margin d
+              bor  = border d
+              brec = content contBlock
+              drec = content d
+              x' = x brec
                  + left (margin d)
                  + left (border d)
                  + left (padding d)
-              y' = y contBlock + height contBlock + pt + bt + mt
-           in d{ x = x'
-               , y = y'
+              y' = y brec + height brec + pt + bt + mt
+           in d{ content = drec{ x = x', y = y' }
                , padding = pad{ top = pt, bottom = pb }
                , border  = bor{ top = bt, bottom = bb }
                , margin  = mar{ top = mt, bottom = mb } }
@@ -171,7 +176,9 @@ layoutChildren (NTree (dim,x) cs) = do
     where
         foo (d,acc) c@(NTree (cdim,_) _) = do
             c' <- layout c d
-            return (d{height = height d + marginBoxHeight cdim}, acc ++ [c'])
+            let rec = content d
+            return (d{ content =
+                rec{height = height rec + marginBoxHeight cdim}}, acc ++ [c'])
 
 
 -- compute the hight of a box
@@ -179,15 +186,15 @@ calcHeight :: LayoutBox -> Either T.Text LayoutBox
 calcHeight root@(NTree (d,x)y) = do
     s <- getStyledElem root
     let d' = case value s "height" of
-             Just (Length h Px)  -> d{height=h}
+             Just (Length h Px)  -> d{content = (content d){height=h}}
              Nothing             -> d
     return $ NTree (d',x) y
 
 
 marginBoxHeight :: Dimensions -> Float
-marginBoxHeight (Dimensions _ _ _ h p b m) = sum [ h, top p, bottom p
-                                                 , top b, bottom b
-                                                 , top m, bottom m ]
+marginBoxHeight (Dimensions c p b m) = sum [ height c, top p, bottom p
+                                                     , top b, bottom b
+                                                     , top m, bottom m ]
 
 
 getStyledElem :: LayoutBox -> Either T.Text StyledNode
