@@ -203,3 +203,22 @@ getStyledElem (NTree (_,box) _) = case box of
     InlineNode s   -> Right $ NTree s []
     AnonymousBlock -> Left "Error: attempted to access the nonexistant\
                            \ StyleNode of an AnonymousBlock"
+
+
+-- Rect and Dimensions helpers
+
+expandedBy :: EdgeSize -> Rect -> Rect
+expandedBy edge rec = Rect{ x      = x rec - left edge
+                          , y      = y rec - top edge
+                          , width  = width rec + left edge + right edge
+                          , height = height rec + top edge + bottom edge }
+
+
+paddingBox :: Dimensions -> Rect
+paddingBox d = expandedBy (padding d) $ content d
+
+marginBox :: Dimensions -> Rect
+marginBox d = expandedBy (margin d) $ content d
+
+borderBox :: Dimensions -> Rect
+borderBox d = expandedBy (border d) $ content d
