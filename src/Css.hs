@@ -5,6 +5,7 @@ module CSS
     , Selector(..)
     , Declaration(..)
     , Value(..)
+    , Color(..)
     , Unit(..)
     , Specificity(..)
     , parseCSS
@@ -42,8 +43,11 @@ data Declaration = Declaration T.Text Value
   deriving (Show, Eq)
 
 data Value = Keyword T.Text
-           | Color Word8 Word8 Word8 Word8
+           | ColorValue Color
            | Length Float Unit
+  deriving (Show, Eq)
+
+data Color = Color Word8 Word8 Word8 Word8
   deriving (Show, Eq)
 
 data Unit = Px --only Px for now
@@ -156,7 +160,7 @@ color = do
     char '#'
     cs <- count 3 (count 2 hexDigit)
     let [r,g,b] = map (fst . head . readHex) cs
-    return $ Color r g b 255
+    return $ ColorValue (Color r g b 255)
 
 keyword = Keyword <$> identifier
 

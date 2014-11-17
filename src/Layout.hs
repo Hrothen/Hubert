@@ -39,6 +39,10 @@ emptyRect = Rect 0 0 0 0
 
 defaultDim = Dimensions emptyRect emptyEdge emptyEdge emptyEdge
 
+layoutTree :: StyledNode -> Dimensions ->Either T.Text LayoutBox
+layoutTree root contBlock = buildLayoutTree root >>=
+                            flip layout contBlock{content = (content contBlock){height=0}}
+
 -- walk the style tree, building a layout tree as we go
 -- FIXME: I suspect this function leaks space
 buildLayoutTree :: StyledNode -> Either T.Text LayoutBox
@@ -175,10 +179,10 @@ layoutChildren (NTree (dim,x) cs) = do
 
     where
         foo (d,acc) c@(NTree (cdim,_) _) = do
-            c' <- layout c d
+            c'@(NTree (cdim',_)_) <- layout c d
             let rec = content d
             return (d{ content =
-                rec{height = height rec + marginBoxHeight cdim}}, acc ++ [c'])
+                rec{height = height rec + marginBoxHeight cdim'}}, acc ++ [c'])
 
 
 -- compute the hight of a box
@@ -192,9 +196,10 @@ calcHeight root@(NTree (d,x)y) = do
 
 
 marginBoxHeight :: Dimensions -> Float
-marginBoxHeight (Dimensions c p b m) = sum [ height c, top p, bottom p
-                                                     , top b, bottom b
-                                                     , top m, bottom m ]
+-- marginBoxHeight (Dimensions c p b m) = sum [ height c, top p, bottom p
+--                                                      , top b, bottom b
+--                                                      , top m, bottom m ]
+marginBoxHeight dim = height (marginBox dim)
 
 
 getStyledElem :: LayoutBox -> Either T.Text StyledNode
@@ -218,7 +223,7 @@ paddingBox :: Dimensions -> Rect
 paddingBox d = expandedBy (padding d) $ content d
 
 marginBox :: Dimensions -> Rect
-marginBox d = expandedBy (margin d) $ content d
+marginBox d = expandedBy (margin d) $ borderBox d
 
 borderBox :: Dimensions -> Rect
-borderBox d = expandedBy (border d) $ content d
+borderBox d = expandedBy (border d) $ paddingBox d
