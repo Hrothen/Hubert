@@ -12,6 +12,8 @@ import qualified Data.Foldable as F
 import qualified Data.Vector as V
 import qualified Data.Text as T
 
+import Control.Lens
+
 import Dom
 import Layout
 import Style
@@ -29,8 +31,8 @@ data Canvas = Canvas { pixels :: V.Vector Color
 paint :: LayoutBox -> Rect -> Canvas
 paint root bounds = let dlist  = buildDisplayList root
                         canvas = newCanvas w h
-                        w = fromInteger . floor $ width  bounds
-                        h = fromInteger . floor $ height bounds
+                        w = fromInteger . floor $ bounds^.width
+                        h = fromInteger . floor $ bounds^.height
                     in F.foldl' paintItem canvas dlist
 
 
@@ -58,18 +60,17 @@ renderBorders (dim,ty) = maybe mempty renderBorders' (getColor ty "border-color"
   where
     renderBorders' color = V.fromList $ map (SolidColor color) [l, r, t, b]
     bbox = borderBox dim
-    bdr  = border dim
+    bdr  = dim^.border
     
-    l = bbox{ width = left bdr }
+    l = bbox & width.~ bdr^.left
     
-    r = bbox{ x     = x bbox + width bbox - right bdr
-            , width = right bdr }
+    r = bbox & x+~ bbox^.width - bdr^.right
+             & width.~ bdr^.right
     
-    t = bbox{ height = top bdr }
+    t = bbox & height.~ bdr^.top
     
-    b = bbox{ y      = y bbox + height bbox - bottom bdr
-            , height = bottom bdr }
-
+    b = bbox & y+~ bbox^.height - bdr^.bottom
+             & height.~ bdr^.bottom
 
 newCanvas :: Word -> Word -> Canvas
 newCanvas w h = let white = Color 255 255 255 255 in
@@ -78,10 +79,10 @@ newCanvas w h = let white = Color 255 255 255 255 in
 paintItem :: Canvas -> DisplayCommand -> Canvas
 paintItem cs (SolidColor color rect) = updateChunk cs (x0,x1) (y0,y1) color
   where
-    x0 = clampInt 0 (w-1) (x rect)
-    y0 = clampInt 0 (h-1) (y rect)
-    x1 = clampInt 0 (w-1) (x rect + width rect - 1)
-    y1 = clampInt 0 (h-1) (y rect + height rect - 1)
+    x0 = clampInt 0 (w-1) (rect^.x)
+    y0 = clampInt 0 (h-1) (rect^.y)
+    x1 = clampInt 0 (w-1) (rect^.x + rect^.width - 1)
+    y1 = clampInt 0 (h-1) (rect^.y + rect^.height - 1)
     w = asFloat $ wdth cs
     h = asFloat $ hght cs
     asFloat = fromInteger . toInteger

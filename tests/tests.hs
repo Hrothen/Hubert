@@ -22,6 +22,9 @@ import Codec.Picture.Types
 
 import qualified HTML.Parser as PR
 import qualified HTML.Parsec as PS
+
+import Control.Lens
+
 import Dom
 import CSS
 import Style
@@ -164,8 +167,7 @@ styletree = NTree (Element (ElementData "html" empt),empt) [head,p1,p2]
     rule1   = HM.fromList [("margin",Keyword "auto"),("color",ColorValue (Color 0 0 0 255))]
     rule2   = HM.singleton "padding" (Length 17 Px)
 
-contBlock = defaultDim{content = (content defaultDim){ width=800, height=168 } }
-
+contBlock = defaultDim & content.width.~800 & content.height.~168
 
 paintpng = paintpng' s d
   where
@@ -174,7 +176,7 @@ paintpng = paintpng' s d
     paintpng' s d = do
       let st = styleTree d s
       lyt <- layoutTree st contBlock
-      let vec = pixels $ paint lyt (content contBlock)
+      let vec = pixels $ paint lyt (contBlock^.content)
       return $ generateImage (\x y-> c2px $ vec V.! (x + (y * 800))) 800 168
     c2px (Color r g b _) = PixelRGB8 r g b
 

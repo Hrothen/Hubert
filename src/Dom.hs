@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings, FlexibleInstances #-}
+{-# LANGUAGE OverloadedStrings, FlexibleInstances, TemplateHaskell#-}
 module Dom where
 
 import Data.Maybe (maybe)
@@ -9,10 +9,13 @@ import qualified Data.HashMap.Strict as HM
 import qualified Data.Text as T
 
 import Data.HashSet
+import Control.Lens
 
 
-data NTree a = NTree a [NTree a]
+data NTree a = NTree { _root :: a, _children :: [NTree a] }
   deriving (Show,Eq)
+
+makeLenses ''NTree
 
 instance Functor NTree where
     fmap f (NTree n ns) = NTree (f n) $ fmap (fmap f) ns
