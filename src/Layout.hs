@@ -1,22 +1,24 @@
-{-#LANGUAGE BangPatterns, OverloadedStrings, TemplateHaskell#-}
+{-# LANGUAGE BangPatterns      #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell   #-}
 module Layout where
 
-import Prelude hiding (lookup)
-import Control.Applicative ((<$>))
-import Control.Monad (foldM)
-import Data.List (foldl', groupBy)
-import Data.Maybe (fromMaybe)
-import Data.Function (on)
+import           Control.Applicative        ((<$>))
+import           Control.Monad              (foldM)
+import           Data.Function              (on)
+import           Data.List                  (foldl', groupBy)
+import           Data.Maybe                 (fromMaybe)
+import           Prelude                    hiding (lookup)
 
-import Control.Lens hiding (children)
-import Control.Monad.State.Strict
-import Control.Monad.Except
+import           Control.Lens               hiding (children)
+import           Control.Monad.Except
+import           Control.Monad.State.Strict
 
-import qualified Data.Text as T
+import qualified Data.Text                  as T
 
-import Dom
-import CSS
-import Style
+import           CSS
+import           Dom
+import           Style
 
 data Rect = Rect { _x      :: Float
                  , _y      :: Float
@@ -64,19 +66,19 @@ buildLayoutTree root = case display root of
     addDim x = (defaultDim,x)
 
     blt rt@(NTree nd cs) = NTree n ns
-      where 
+      where
         (!n, !ns) = case display rt of
             Block  -> (BlockNode  nd, anonify ns')
             Inline -> (InlineNode nd, ns')
             -- won't ever hit DisplayNone, it's filtered out
-        
+
         anonify = concatMap mergeInlines . groupBy ((&&) `on` isInline)
-        
+
         mergeInlines x = if isInline $ head x then [NTree AnonymousBlock x] else x
 
         isInline (NTree InlineNode{} _) = True
         isInline _                      = False
-        
+
         ns' = map blt $ filter ((/=DisplayNone) . display) cs
 
 
@@ -106,15 +108,19 @@ calcWidth contBlock rt = do
         total           = sum $ map toPx (w:vals)
         underflow       = contBlock^.content.width - total
         (margins,vals') = splitAt 2 vals
-        
+
         (w',ml',mr') = checkUnderflow w underflow $ checkAutoMargins margins w total
 
         [w'',ml,mr,blw,brw,plf,prt] = map toPx (w':ml':mr':vals')
 
-    return $ rt &~ root._1.content.width.= w''
-                &~ root._1.padding.left.= plf &~ root._1.padding.right.= prt
-                &~ root._1.border.left.=  blw &~ root._1.border.right.=  brw
-                &~ root._1.margin.left.=  ml  &~ root._1.margin.right.=  mr
+    return $ rt &~ zoom (root._1) (do
+      content.width .= w''
+      padding.left  .= plf
+      padding.right .= prt
+      border.left   .= blw
+      border.right  .= brw
+      margin.left   .= ml
+      margin.right  .= mr)
 
   where
     checkAutoMargins [x,y] w total
@@ -130,8 +136,9 @@ calcWidth contBlock rt = do
         (True,_,_)          ->
             let l = if mlf == auto then zero else mlf
                 r = if mrt == auto then zero else mrt
-             in if uflow >= 0  then (Length uflow Px,l,r)
-                                   else (zero,l,Length (toPx r + uflow) Px)
+             in if uflow >= 0
+                then (Length uflow Px,l,r)
+                else (zero,l,Length (toPx r + uflow) Px)
 
 
 -- lookupSideVals :: ErrState [Value]
@@ -162,18 +169,15 @@ calcPosition :: Dimensions -> LayoutBox -> Either T.Text LayoutBox
 calcPosition contBlock rt = do
     [mt,mb,bt,bb,pt,pb] <- lookupVertVals rt
     let d = rt^.root._1
-    return $ rt
-       &~ root._1.content.x.= contBlock^.content.x
-                            + d^.margin.left
-                            + d^.border.left
-                            + d^.padding.left
-       &~ root._1.content.y.= contBlock^.content.y
-                            + contBlock^.content.height
-                            + pt + bt + mt
-       &~ root._1.padding.top.= pt &~ root._1.padding.bottom.= pb
-       &~ root._1.border.top.=  bt &~ root._1.border.bottom.= bb
-       &~ root._1.margin.top.=  mt &~ root._1.margin.bottom.= mb
-
+    return $ rt &~ zoom (root._1) (do
+       content.x .= contBlock^.content.x + d^.margin.left + d^.border.left + d^.padding.left
+       content.y .= contBlock^.content.y + contBlock^.content.height + pt + bt + mt
+       padding.top    .= pt
+       padding.bottom .= pb
+       border.top     .= bt
+       border.bottom  .= bb
+       margin.top     .= mt
+       margin.bottom  .= mb)
 
 layoutChildren :: LayoutBox -> Either T.Text LayoutBox
 layoutChildren rt = do
@@ -210,11 +214,11 @@ getStyledElem rt = case rt^.root._2 of
 -- Rect and Dimensions helpers
 
 expandedBy :: Rect -> EdgeSize -> Rect
-expandedBy rec edge = rec & x -~ edge^.left
-                          & y -~ edge^.top
-                          & width  +~ (edge^.left + edge^.right)
-                          & height +~ (edge^.top + edge^.bottom) 
-
+expandedBy rec edge = rec &~ do
+  x -= edge^.left
+  y -= edge^.top
+  width  += (edge^.left + edge^.right)
+  height += (edge^.top + edge^.bottom)
 
 paddingBox :: Dimensions -> Rect
 -- paddingBox d = expandedBy (padding d) $ content d
