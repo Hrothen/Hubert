@@ -37,7 +37,7 @@ paint root bounds = let dlist  = buildDisplayList root
 
 
 buildDisplayList :: LayoutBox -> DisplayList
-buildDisplayList lbox = F.foldMap renderLayoutBox lbox
+buildDisplayList = F.foldMap renderLayoutBox
 
 renderLayoutBox :: (Dimensions,BoxType) -> DisplayList
 renderLayoutBox box = renderBackgroud box <> renderBorders box
@@ -96,7 +96,7 @@ updateChunk cs (x0,x1) (y0,y1) c = let pxs = V.update (pixels cs) chunk in
                                    cs{ pixels = pxs}
   where
     chunk = V.map (\a->(fromIntegral a,c)) indicies
-    indicies = V.fromList [ y * (toInteger $ wdth cs) + x | x <- [x0..x1], y <- [y0..y1] ]
+    indicies = V.fromList [ y * toInteger (wdth cs) + x | x <- [x0..x1], y <- [y0..y1] ]
 
 
 clampInt :: Float -> Float -> Float -> Integer

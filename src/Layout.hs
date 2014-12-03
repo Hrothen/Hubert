@@ -6,6 +6,7 @@ import Control.Applicative ((<$>))
 import Control.Monad (foldM)
 import Data.List (foldl', groupBy)
 import Data.Maybe (fromMaybe)
+import Data.Function (on)
 
 import Control.Lens hiding (children)
 import Control.Monad.State.Strict
@@ -69,7 +70,7 @@ buildLayoutTree root = case display root of
             Inline -> (InlineNode nd, ns')
             -- won't ever hit DisplayNone, it's filtered out
         
-        anonify = concatMap mergeInlines . groupBy (\x y -> isInline x && isInline y)
+        anonify = concatMap mergeInlines . groupBy ((&&) `on` isInline)
         
         mergeInlines x = if isInline $ head x then [NTree AnonymousBlock x] else x
 
@@ -221,8 +222,8 @@ paddingBox d = (d^.content) `expandedBy` (d^.padding)
 
 marginBox :: Dimensions -> Rect
 -- marginBox d = expandedBy (margin d) $ borderBox d
-marginBox d = (borderBox d) `expandedBy` (d^.margin)
+marginBox d = borderBox d `expandedBy` (d^.margin)
 
 borderBox :: Dimensions -> Rect
 -- borderBox d = expandedBy (border d) $ paddingBox d
-borderBox d = (paddingBox d) `expandedBy` (d^.margin)
+borderBox d = paddingBox d `expandedBy` (d^.margin)
