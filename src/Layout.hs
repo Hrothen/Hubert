@@ -111,10 +111,11 @@ calcWidth contBlock rt = do
 
         [w'',ml,mr,blw,brw,plf,prt] = map toPx (w':ml':mr':vals')
 
-    return $ rt &~ root._1.content.width.= w''
-                &~ root._1.padding.left.= plf &~ root._1.padding.right.= prt
-                &~ root._1.border.left.=  blw &~ root._1.border.right.=  brw
-                &~ root._1.margin.left.=  ml  &~ root._1.margin.right.=  mr
+    return $ rt &~ zoom (root . _1) (do
+        content.width .= w''
+        padding.left  .= plf; padding.right .= prt
+        border.left   .= blw; border.right  .= brw
+        margin.left   .= ml ; margin.right  .= mr)
 
   where
     checkAutoMargins [x,y] w total
@@ -130,8 +131,9 @@ calcWidth contBlock rt = do
         (True,_,_)          ->
             let l = if mlf == auto then zero else mlf
                 r = if mrt == auto then zero else mrt
-             in if uflow >= 0  then (Length uflow Px,l,r)
-                                   else (zero,l,Length (toPx r + uflow) Px)
+             in if uflow >= 0  
+                then (Length uflow Px,l,r)
+                else (zero,l,Length (toPx r + uflow) Px)
 
 
 -- lookupSideVals :: ErrState [Value]
@@ -149,30 +151,30 @@ lookupSideVals rt = do
 lookupVertVals :: LayoutBox -> Either T.Text [Float]
 lookupVertVals rt = do
     style <- getStyledElem rt
-    return $ map (toPx . (\a -> lookup style a zero)) [
-                    ["margin-top"         , "margin"]
-                  , ["margin-bottom"      , "margin"]
-                  , ["border-top-width"   , "border-width"]
-                  , ["border-bottom-width", "border-width"]
-                  , ["padding-top"        , "padding"]
-                  , ["padding-bottom"     , "padding"] ]
+    return $ map (toPx . (\a -> lookup style a zero))
+        [ ["margin-top"         , "margin"]
+        , ["margin-bottom"      , "margin"]
+        , ["border-top-width"   , "border-width"]
+        , ["border-bottom-width", "border-width"]
+        , ["padding-top"        , "padding"]
+        , ["padding-bottom"     , "padding"] ]
 
 
 calcPosition :: Dimensions -> LayoutBox -> Either T.Text LayoutBox
 calcPosition contBlock rt = do
     [mt,mb,bt,bb,pt,pb] <- lookupVertVals rt
     let d = rt^.root._1
-    return $ rt
-       &~ root._1.content.x.= contBlock^.content.x
-                            + d^.margin.left
-                            + d^.border.left
-                            + d^.padding.left
-       &~ root._1.content.y.= contBlock^.content.y
-                            + contBlock^.content.height
-                            + pt + bt + mt
-       &~ root._1.padding.top.= pt &~ root._1.padding.bottom.= pb
-       &~ root._1.border.top.=  bt &~ root._1.border.bottom.= bb
-       &~ root._1.margin.top.=  mt &~ root._1.margin.bottom.= mb
+    return $ rt &~ zoom (root . _1) (do
+        content.x.= contBlock^.content.x
+                  + d^.margin.left
+                  + d^.border.left
+                  + d^.padding.left
+        content.y.= contBlock^.content.y
+                  + contBlock^.content.height
+                  + pt + bt + mt
+        padding.top .= pt; padding.bottom .= pb
+        border.top  .= bt; border.bottom  .= bb
+        margin.top  .= mt; margin.bottom  .= mb)
 
 
 layoutChildren :: LayoutBox -> Either T.Text LayoutBox
@@ -210,20 +212,18 @@ getStyledElem rt = case rt^.root._2 of
 -- Rect and Dimensions helpers
 
 expandedBy :: Rect -> EdgeSize -> Rect
-expandedBy rec edge = rec & x -~ edge^.left
-                          & y -~ edge^.top
-                          & width  +~ (edge^.left + edge^.right)
-                          & height +~ (edge^.top + edge^.bottom) 
+expandedBy rec edge = rec &~ do
+                          x -= edge^.left
+                          y -= edge^.top
+                          width  += (edge^.left + edge^.right)
+                          height += (edge^.top + edge^.bottom)
 
 
 paddingBox :: Dimensions -> Rect
--- paddingBox d = expandedBy (padding d) $ content d
 paddingBox d = (d^.content) `expandedBy` (d^.padding)
 
 marginBox :: Dimensions -> Rect
--- marginBox d = expandedBy (margin d) $ borderBox d
 marginBox d = borderBox d `expandedBy` (d^.margin)
 
 borderBox :: Dimensions -> Rect
--- borderBox d = expandedBy (border d) $ paddingBox d
 borderBox d = paddingBox d `expandedBy` (d^.margin)
