@@ -9,8 +9,6 @@ import Data.Maybe (fromMaybe)
 import Data.Function (on)
 
 import Control.Lens hiding (children)
-import Control.Monad.State.Strict
-import Control.Monad.Except
 
 import qualified Data.Text as T
 
