@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings, NoMonomorphismRestriction #-}
+{-# LANGUAGE OverloadedStrings, NoMonomorphismRestriction, FlexibleContexts #-}
 module HTML.Parsec
     ( parseHtml,
       parseText,
@@ -47,7 +47,7 @@ parseElement = do
 -- parseChildren = spaces >> manyTill parseChild end
 --   where
 --     end = eof <|> (try (string "</") >> return ())
--- 
+--
 --     parseChild = spacesAfter parseNode
 
 
